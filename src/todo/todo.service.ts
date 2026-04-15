@@ -1,4 +1,5 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
+
 
 type Todo = {
   id: number;
@@ -15,6 +16,14 @@ export class TodoService {
     return this.todos;
   }
 
+  getSingleTodo(id: number) {
+    const todo = this.todos.find((todo) => todo.id === id);
+    if (!todo) {
+      throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
+    }
+    return todo;
+  }
+
   createTodo(title: string) {
     this.counter++;
     const todo: Todo = { id: this.counter, title, completed: false };
@@ -25,7 +34,7 @@ export class TodoService {
   updateTodo(id: number, title: string) {
     const todo = this.todos.find((todo) => todo.id === id);
     if (!todo) {
-      throw new Error('Todo not found');
+      throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
     todo.title = title;
     return todo;
@@ -34,7 +43,7 @@ export class TodoService {
   deleteTodo(id: number) {
     const todo = this.todos.find((todo) => todo.id === id);
     if (!todo) {
-      throw new Error('Todo not found');
+      throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
     this.todos = this.todos.filter((todo) => todo.id !== id);
     return todo;

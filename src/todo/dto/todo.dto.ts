@@ -1,3 +1,7 @@
+import { IsNotEmpty, IsString } from 'class-validator';
+
 export class TodoDto {
-  title: string;
+  @IsNotEmpty()
+  @IsString()
+  title!: string;
 }

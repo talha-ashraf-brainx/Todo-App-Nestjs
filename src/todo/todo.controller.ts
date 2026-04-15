@@ -9,6 +9,7 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  ValidationPipe,
 } from '@nestjs/common';
 import { TodoDto } from './dto/todo.dto';
 import { TodoService } from './todo.service';
@@ -24,11 +25,11 @@ export class TodoController {
 
   @Get(':id')
   getTodo(@Param('id', ParseIntPipe) id: number) {
-    return this.todoService.getTodos().find((todo) => todo.id === id);
+    return this.todoService.getSingleTodo(id);
   }
 
   @Post()
-  createTodo(@Body() body: TodoDto) {
+  createTodo(@Body(new ValidationPipe()) body: TodoDto) {
     return this.todoService.createTodo(body.title);
   }
 
