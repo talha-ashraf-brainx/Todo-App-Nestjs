@@ -1,23 +1,17 @@
 import { Injectable, HttpException, HttpStatus } from '@nestjs/common';
-
-
-type Todo = {
-  id: number;
-  title: string;
-  completed: boolean;
-};
+import type { Todo } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TodoService {
-  private counter = 0;
-  private todos: Todo[] = [];
+  constructor(private readonly prisma: PrismaService) {}
 
-  getTodos(): Todo[] {
-    return this.todos;
+  getTodos(): Promise<Todo[]> {
+    return this.prisma.todo.findMany();
   }
 
-  getSingleTodo(id: number) {
-    const todo = this.todos.find((todo) => todo.id === id);
+  async getSingleTodo(id: number) {
+    const todo = await this.prisma.todo.findUnique({ where: { id } });
     if (!todo) {
       throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
@@ -25,27 +19,30 @@ export class TodoService {
   }
 
   createTodo(title: string) {
-    this.counter++;
-    const todo: Todo = { id: this.counter, title, completed: false };
-    this.todos.push(todo);
-    return todo;
+    return this.prisma.todo.create({
+      data: {
+        title,
+        completed: false,
+      },
+    });
   }
 
-  updateTodo(id: number, title: string) {
-    const todo = this.todos.find((todo) => todo.id === id);
-    if (!todo) {
+  async updateTodo(id: number, title: string) {
+    const existing = await this.prisma.todo.findUnique({ where: { id } });
+    if (!existing) {
       throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
-    todo.title = title;
-    return todo;
+    return this.prisma.todo.update({
+      where: { id },
+      data: { title },
+    });
   }
 
-  deleteTodo(id: number) {
-    const todo = this.todos.find((todo) => todo.id === id);
-    if (!todo) {
+  async deleteTodo(id: number) {
+    const existing = await this.prisma.todo.findUnique({ where: { id } });
+    if (!existing) {
       throw new HttpException(`Todo with id ${id} not found`, HttpStatus.NOT_FOUND);
     }
-    this.todos = this.todos.filter((todo) => todo.id !== id);
-    return todo;
+    return this.prisma.todo.delete({ where: { id } });
   }
 }

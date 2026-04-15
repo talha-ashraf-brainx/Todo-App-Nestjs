@@ -34,7 +34,7 @@ export class TodoController {
   }
 
   @Put(':id')
-  updateTodo(@Param('id', ParseIntPipe) id: number, @Body() body: TodoDto) {
+  updateTodo(@Param('id', ParseIntPipe) id: number, @Body(new ValidationPipe()) body: TodoDto) {
     return this.todoService.updateTodo(id, body.title);
   }
 
