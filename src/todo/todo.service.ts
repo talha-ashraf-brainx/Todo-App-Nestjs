@@ -6,8 +6,31 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TodoService {
   constructor(private readonly prisma: PrismaService) {}
 
-  getTodos(): Promise<Todo[]> {
-    return this.prisma.todo.findMany();
+  getTodos(args?: { cursor?: number; take?: number }): Promise<Todo[]> {
+    const cursor = args?.cursor;
+    const take = args?.take;
+    const orderBy = { id: 'asc' as const };
+
+    if (cursor === undefined && take === undefined) {
+      return this.prisma.todo.findMany({ orderBy });
+    }
+
+    if (cursor === undefined) {
+      return this.prisma.todo.findMany({ take, orderBy });
+    }
+
+    if (take === undefined) {
+      return this.prisma.todo.findMany({
+        where: { id: { gt: cursor } },
+        orderBy,
+      });
+    }
+
+    return this.prisma.todo.findMany({
+      cursor: { id: cursor },
+      take,
+      orderBy,
+    });
   }
 
   async getSingleTodo(id: number) {

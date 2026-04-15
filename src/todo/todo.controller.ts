@@ -10,6 +10,7 @@ import {
   HttpCode,
   HttpStatus,
   ValidationPipe,
+  Query,
 } from '@nestjs/common';
 import { TodoDto } from './dto/todo.dto';
 import { TodoService } from './todo.service';
@@ -19,8 +20,11 @@ export class TodoController {
   constructor(private todoService: TodoService) {}
 
   @Get()
-  getTodos() {
-    return this.todoService.getTodos();
+  getTodos(
+    @Query('cursor', new ParseIntPipe({ optional: true })) cursor?: number,
+    @Query('take', new ParseIntPipe({ optional: true })) take?: number,
+  ) {
+    return this.todoService.getTodos({ cursor, take });
   }
 
   @Get(':id')
