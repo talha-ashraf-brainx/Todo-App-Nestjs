@@ -11,11 +11,15 @@ import {
   HttpStatus,
   ValidationPipe,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { TodoDto } from './dto/todo.dto';
 import { TodoService } from './todo.service';
+import { JwtGuard } from '../auth/jwt.guard';
+import { TodoIdGuard } from './todoId.guard';
 
 @Controller('todo')
+@UseGuards(JwtGuard)
 export class TodoController {
   constructor(private todoService: TodoService) {}
 
@@ -27,6 +31,7 @@ export class TodoController {
     return this.todoService.getTodos({ cursor, take });
   }
 
+  @UseGuards(TodoIdGuard)
   @Get(':id')
   getTodo(@Param('id', ParseIntPipe) id: number) {
     return this.todoService.getSingleTodo(id);
