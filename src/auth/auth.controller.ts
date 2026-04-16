@@ -3,6 +3,8 @@ import { AuthService } from './auth.service';
 import {SignupDto} from './dto/signup.dto';
 import {LoginDto} from './dto/login.dto';
 import { RefreshGuard } from './refresh.guard';
+import { JwtGuard } from './jwt.guard';
+import { GetUser } from './decorators/user';
 
 @Controller('auth')
 export class AuthController {
@@ -20,7 +22,13 @@ export class AuthController {
 
     @UseGuards(RefreshGuard)
     @Post('refresh')
-    refresh(@Req() req: Request) {
-        return this.authService.refresh(req);
+    refresh(@GetUser() user: any) {
+        return this.authService.refresh(user);
+    }
+
+    @UseGuards(JwtGuard)
+    @Post('logout')
+    logout(@GetUser() user: any) {
+        return this.authService.logout(user);
     }
 }

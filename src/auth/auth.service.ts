@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus, Injectable, UnauthorizedException } from '@nestjs/common';
+import { User } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup.dto';
 import * as bcrypt from 'bcrypt';
@@ -33,7 +34,7 @@ export class AuthService {
             throw new HttpException('Failed to create user', HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
-        const { accessToken, refreshToken } = await this.getTokens({ id: user.id, email: user.email });
+        const { accessToken, refreshToken } = this.getTokens({ id: user.id, email: user.email });
 
         return {accessToken, refreshToken, message: 'User created successfully' };
     }
@@ -49,23 +50,23 @@ export class AuthService {
             throw new HttpException('Invalid password', HttpStatus.BAD_REQUEST);
         }
 
-        const { accessToken, refreshToken } = await this.getTokens({ id: user.id, email: user.email });
+        const { accessToken, refreshToken } = this.getTokens({ id: user.id, email: user.email });
 
         return {accessToken, refreshToken, message: 'Login successful' };
     }
     
-    async refresh(req) {
-        const { id, email } = req.user;
+    async refresh(user: { id: number, email: string }) {
+        const { id, email } = user;
       
-        const user = await this.prisma.user.findUnique({
+        const userData = await this.prisma.user.findUnique({
           where: { id },
         });
       
-        if (!user || !user.hashedRefreshToken) {
+        if (!userData || !userData.hashedRefreshToken) {
           throw new UnauthorizedException('Access denied');
         }
       
-        const tokens = await this.getTokens({ id, email });
+        const tokens = this.getTokens({ id, email });
       
         return {
           ...tokens,
@@ -73,16 +74,27 @@ export class AuthService {
         };
       }
     
-    async getTokens(payload: { id: number, email: string }) {
+    getTokens(payload: { id: number, email: string }) {
         const accessToken = this.jwt.sign(payload, { expiresIn: '1m' });
         const refreshToken = this.jwt.sign(payload, { expiresIn: '7d' });
+        this.persistHashedRefreshToken(payload.id, refreshToken);
+        return { accessToken, refreshToken };
+    }
 
+    private async persistHashedRefreshToken(userId: number, refreshToken: string) {
         const hashedRefreshToken = await bcrypt.hash(refreshToken, 10);
         await this.prisma.user.update({
-            where: { id: payload.id },
+            where: { id: userId },
             data: { hashedRefreshToken },
         });
+    }
 
-        return { accessToken, refreshToken };
+    async logout(user: Pick<User, 'id'>) {
+        const { id } = user;
+        await this.prisma.user.update({
+            where: { id },
+            data: { hashedRefreshToken: null },
+        });
+        return { message: 'Logout successful' };
     }
 }
